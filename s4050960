@@ -1,0 +1,205 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package webbrowser;
+
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.net.*;
+import java.io.*;
+import javax.swing.*;
+import javax.swing.event.*;
+ 
+public class WebBrowser
+{
+	public static void main(String [] args)
+	{
+		JFrame frame = new EditorPaneFrame();
+		frame.show();
+	}
+}
+class EditorPaneFrame extends JFrame
+{
+ 
+	private JTextField url;
+        private JTextField url_b;
+        private JTextArea textAreal = new JTextArea(15,5);
+        private JButton loadButton;
+        private JButton backButton;
+        private JButton backButton_b;
+        private JEditorPane editorPane;
+        private JEditorPane editorPane_b;
+        private Stack urlStack = new Stack();
+        private Stack urlStack_b = new Stack();
+        
+        public EditorPaneFrame()
+        {
+            setTitle("Yuyika Pooprasong s4050960@kmitl.ac.th - Java Web Browser (Network Programming Class Assignment)");
+            setSize(1200,600);
+            addWindowListener(new WindowAdapter()
+            {
+                public void windowClosing(WindowEvent e)
+                {
+                    System.exit(0);
+                }
+            } );
+        // set up text field and load button for typing in URL
+            url = new JTextField(30);
+            url_b = new JTextField(40);
+            final ThreadSubclass ThreadA = new ThreadSubclass();
+            final ThreadSubclass ThreadB = new ThreadSubclass();
+            
+            loadButton = new JButton("LOAD");
+            loadButton.addActionListener(new ActionListener()
+            {
+            public void actionPerformed(ActionEvent event)
+                {
+                    try
+                    {
+                // remember URL for back button
+                        // Thread A
+                        urlStack.push(url.getText());
+                        editorPane.setPage(url.getText());
+                        String text = "Thread A: Start get url page :"+url.getText()+"\n";
+                        textAreal.append(text);
+                        URL obj_a = new URL(url.getText());
+                        URLConnection conn_a = obj_a.openConnection();
+                        java.util.Map<String, java.util.List<String>> map = conn_a.getHeaderFields();
+                        for (java.util.Map.Entry<String, java.util.List<String>> entry : map.entrySet()) 
+                        {
+                            textAreal.append("Thread A : " + entry.getKey()+ " ,Value : " + entry.getValue()+"\n");
+                        }
+                        ThreadA.start();
+                        text = "Thread A: Running"+"\n";
+                        textAreal.append(text);
+                        
+                        // Thread b
+                        urlStack.push(url_b.getText());
+                        editorPane_b.setPage(url_b.getText());
+                        text = "Thread B: Start get url page :"+url_b.getText()+"\n";
+                        textAreal.append(text);
+                        URL obj_b = new URL(url_b.getText());
+                        URLConnection conn_b = obj_b.openConnection();
+                        java.util.Map<String, java.util.List<String>> map_b = conn_b.getHeaderFields();
+                        for (java.util.Map.Entry<String, java.util.List<String>> entry : map_b.entrySet()) 
+                        {
+                            textAreal.append("Thread B : " + entry.getKey()+ " ,Value : " + entry.getValue()+"\n");
+                        }
+                        ThreadB.start();
+                        text = "Thread B: Running"+"\n";
+                        textAreal.append(text);
+                    }
+                    catch(Exception e)
+                    {
+                        editorPane.setText("Error: " +e);
+                        editorPane_b.setText("Error: " +e);
+                    }
+                }
+            });
+        // set up back button and button action
+            backButton = new JButton("Back");
+            backButton.addActionListener(new ActionListener()
+            {
+                public void actionPerformed(ActionEvent event)
+                {
+                    if(urlStack.size()<=1) return;
+                    try
+                    {
+                        urlStack.pop();
+                        String urlString = (String)urlStack.peek();
+                        url.setText(urlString);
+                        editorPane.setPage(urlString);
+                    }
+                    catch(IOException e)
+                    {
+                        editorPane.setText("Error : " +e);
+                    }
+                }
+            });
+            editorPane = new JEditorPane();
+            editorPane.setEditable(false);
+            editorPane.addHyperlinkListener(new HyperlinkListener()
+            {
+                public void hyperlinkUpdate(HyperlinkEvent event)
+                {
+                    if(event.getEventType() == HyperlinkEvent.EventType.ACTIVATED)
+                    {
+                        try
+                        {
+                            urlStack.push(event.getURL().toString());
+                            url.setText(event.getURL().toString());
+                            editorPane.setPage(event.getURL());
+                        }
+                        catch(IOException e)
+                        {
+                            editorPane.setText("Error: " + e);
+                        }
+                    }
+                }
+            });
+            
+            backButton_b = new JButton("Back");
+            backButton_b.addActionListener(new ActionListener()
+            {
+		public void actionPerformed(ActionEvent event)
+		{
+			if(urlStack_b.size()<=1) return;
+			try
+			{
+				urlStack_b.pop();
+				String urlString = (String)urlStack_b.peek();
+				url_b.setText(urlString);
+				editorPane_b.setPage(urlString);
+			}
+			catch(IOException e)
+			{
+				editorPane_b.setText("Error : " +e);
+			}
+		}
+            });
+                
+                /////// editorPane Thread b
+            editorPane_b = new JEditorPane();
+            editorPane_b.setEditable(false);
+            editorPane_b.addHyperlinkListener(new HyperlinkListener()
+            {
+		public void hyperlinkUpdate(HyperlinkEvent event)
+		{
+			if(event.getEventType() == HyperlinkEvent.EventType.ACTIVATED)
+			{
+				try
+				{
+					urlStack_b.push(event.getURL().toString());
+					url_b.setText(event.getURL().toString());
+					editorPane_b.setPage(event.getURL());
+				}
+				catch(IOException e)
+				{
+					editorPane_b.setText("Error: " + e);
+				}
+			}
+		}
+            });
+            Container contentPane = getContentPane();
+            editorPane.setSize(550,300);
+            contentPane.add(new JScrollPane(editorPane),"West");
+            editorPane_b.setSize(550,300);
+            contentPane.add(new JScrollPane(editorPane_b),"East");
+            textAreal.setForeground(Color.red);
+            contentPane.add(new JScrollPane(textAreal),"South");
+            
+            JPanel panel = new JPanel();
+            panel.add(new JLabel("URL-A"));
+            panel.add(url);
+            panel.add(backButton);
+            panel.add(loadButton);
+            panel.add(new JLabel("URL-B"));
+            panel.add(url_b);
+            panel.add(backButton_b);
+
+            contentPane.add(panel,"North");
+            }
+ 
+}
